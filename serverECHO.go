@@ -111,15 +111,17 @@ func (u *EchoUpgrader) Upgrade(ctx echo.Context, handler func(*Conn) error, resp
 		return u.returnError(ctx, http.StatusInternalServerError, "websocket: application specific Sec-Websocket-Extensions headers are unsupported")
 	}
 
-	if !tokenListContainsValue(r.Header().Std(), "Sec-Websocket-Version", "13") {
+	reqHeader := r.Header().Std()
+
+	if !tokenListContainsValue(reqHeader, "Sec-Websocket-Version", "13") {
 		return u.returnError(ctx, http.StatusBadRequest, "websocket: version != 13")
 	}
 
-	if !tokenListContainsValue(r.Header().Std(), "Connection", "upgrade") {
+	if !tokenListContainsValue(reqHeader, "Connection", "upgrade") {
 		return u.returnError(ctx, http.StatusBadRequest, "websocket: could not find connection header with token 'upgrade'")
 	}
 
-	if !tokenListContainsValue(r.Header().Std(), "Upgrade", "websocket") {
+	if !tokenListContainsValue(reqHeader, "Upgrade", "websocket") {
 		return u.returnError(ctx, http.StatusBadRequest, "websocket: could not find upgrade header with token 'websocket'")
 	}
 
@@ -141,7 +143,7 @@ func (u *EchoUpgrader) Upgrade(ctx echo.Context, handler func(*Conn) error, resp
 	// Negotiate PMCE
 	var compress bool
 	if u.EnableCompression {
-		for _, ext := range parseExtensions(r.Header().Std()) {
+		for _, ext := range parseExtensions(reqHeader) {
 			if ext[""] != "permessage-deflate" {
 				continue
 			}
@@ -264,8 +266,9 @@ func EchoSubprotocols(r engine.Request) []string {
 // IsWebSocketUpgrade returns true if the client requested upgrade to the
 // WebSocket protocol.
 func EchoIsWebSocketUpgrade(r engine.Request) bool {
-	return tokenListContainsValue(r.Header().Std(), "Connection", "upgrade") &&
-		tokenListContainsValue(r.Header().Std(), "Upgrade", "websocket")
+	reqHeader := r.Header().Std()
+	return tokenListContainsValue(reqHeader, "Connection", "upgrade") &&
+		tokenListContainsValue(reqHeader, "Upgrade", "websocket")
 }
 
 func matchSubprotocol(clientProtocols, serverProtocols []string) string {
