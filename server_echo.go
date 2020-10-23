@@ -182,7 +182,7 @@ func (u *EchoUpgrader) Upgrade(ctx echo.Context, handler func(*Conn) error, resp
 	}
 	w.WriteHeader(http.StatusSwitchingProtocols)
 
-	w.Hijacker(func(netConn net.Conn) {
+	err = w.Hijacker(func(netConn net.Conn) {
 		c := newConn(netConn, true, u.ReadBufferSize, u.WriteBufferSize)
 		c.subprotocol = subprotocol
 		if compress {
